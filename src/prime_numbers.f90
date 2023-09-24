@@ -109,7 +109,7 @@
 
                 losafe = max(lo,2_IP)
 
-                mask   = primes_mask(max(7,lo), hi)
+                mask   = primes_mask_ge7_bounds(max(7,lo), hi)
                 nmask  = count(mask)
                 nshort = count(has_235)
 
@@ -552,13 +552,61 @@
        isqrt = floor(sqrt(real(n,WP)),IP)
     end function isqrt
 
-    function primes_mask_hi(limit) result(mask)
+
+    ! Return a list of prime numbers between low and hi.
+    pure function primes_mask_bounds(lo,hi) result(mask)
+       integer(IP), intent(in) :: lo,hi
+       logical(LP), allocatable :: mask(:)
+
+       integer(IP), parameter :: i_235(3) = [integer(IP) :: 2,3,5]
+       integer(IP) :: lsi,lwi,i
+       logical(LP) :: has_235(3)
+       logical(LP), allocatable :: wheel_sieve(:)
+
+       ! Invalid inputs
+       if (.not.(hi>=lo .and. lo>0 .and. hi<huge(hi))) then
+           allocate(mask(0))
+           return
+       end if
+
+       ! Internally use flexible bounds, will return a [1:hi-lo+1] array
+       allocate(mask(lo:hi),source=.false._LP)
+
+       ! Check small primes
+       has_235 = lo<=i_235 .and. hi>=i_235
+
+       if (has_235(1)) mask(2) = .true._LP
+       if (has_235(2)) mask(3) = .true._LP
+       if (has_235(3)) mask(5) = .true._LP
+
+       if (hi<7) return
+
+       wheel_sieve = primes_mask_ge7_bounds(max(7, lo), hi)
+       lsi = lo - 1
+       lwi = wheel_index(lsi)
+       do i = 1,size(wheel_sieve,kind=IP)
+           mask(wheel_prime(i+lwi)) = wheel_sieve(i)
+       end do
+       return
+    end function primes_mask_bounds
+
+    pure function primes_mask_hi(limit) result(mask)
+       integer(IP), intent(in) :: limit
+       logical(LP), allocatable :: mask(:)
+       mask = primes_mask_bounds(1,limit)
+    end function primes_mask_hi
+
+    pure function primes_mask_ge7_hi(limit) result(mask)
        integer(IP), intent(in) :: limit
        logical(LP), allocatable :: mask(:)
 
        integer(IP) :: m,n,p,q,i,j
 
-       if (.not.limit>=7) stop '[primes] mask range limit must be >=7.'
+       ! This is an internal function that NEEDS to operate with limit>=7
+       if (.not.limit>=7) then
+          allocate(mask(0))
+          return
+       end if
 
        n = wheel_index(limit)
        m = wheel_prime(m)
@@ -577,9 +625,9 @@
           endif
        end do
 
-    end function primes_mask_hi
+    end function primes_mask_ge7_hi
 
-    function primes_mask_bounds(lo,hi) result(mask)
+    pure function primes_mask_ge7_bounds(lo,hi) result(mask)
        integer(IP), intent(in) :: lo,hi
        logical(LP), allocatable :: mask(:)
 
@@ -587,7 +635,11 @@
        integer(WP) :: r
        logical(LP), allocatable :: small_mask(:)
 
-       if (.not.(lo>=7 .and. hi>=7)) stop '[primes] inputs to mask range must be >=7. '
+       ! This is an internal function that needs to be called with min(lo,hi)>=7
+       if (.not.min(lo,hi)>=7) then
+           allocate(mask(0))
+           return
+       endif
 
        wlo = wheel_index(lo-1)
        whi = wheel_index(hi)
@@ -596,7 +648,7 @@
        allocate(mask(whi-wlo), source=.true._LP)
        if (hi<49) return
 
-       small_mask = primes_mask_hi(isqrt(hi))
+       small_mask = primes_mask_ge7_hi(isqrt(hi))
 
        do i=1,size(small_mask)
           if (small_mask(i)) then
@@ -606,8 +658,6 @@
             ! Use wide integer to agoid r<=m due to overflow
             r = int(p,WP)*int(wheel_prime(j+1),WP)
             if (r>m) cycle
-
-
 
             j = iand(j,7_IP) + 1_IP
             q = int(r,IP)
@@ -622,7 +672,7 @@
           end if
        end do
 
-    end function primes_mask_bounds
+    end function primes_mask_ge7_bounds
 
   end module prime_numbers
 
