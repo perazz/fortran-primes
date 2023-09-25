@@ -143,12 +143,12 @@
 
 
     ! Detect if an integer number is prime
-    logical function is_prime32(n) result(is_prime)
+    elemental logical function is_prime32(n) result(is_prime)
        integer(IP), intent(in) :: n
        is_prime = is_prime64(int(n,WP))
     end function is_prime32
 
-    logical function is_prime64(n) result(is_prime)
+    elemental logical function is_prime64(n) result(is_prime)
        integer(WP), intent(in) :: n
 
        integer(WP), parameter :: SIMPLE_FACTORS(*) = [3,5,7,11,13,17,19,23]
