@@ -45,16 +45,12 @@ program test_primes
     call add_test(test_is_prime())
     call add_test(test_vs_c())
 
+    write(*,fmt_failed)this_test,npassed,nfailed
     if (nfailed>0) then
-        write(*,fmt_failed)this_test,npassed,nfailed
         stop -1
     else
         stop 0
     endif
-
-
-
-
 
     return
 
@@ -115,6 +111,13 @@ program test_primes
        end interface
 
        integer(c_int32_t) :: x
+
+       do x=huge(x)-10000,huge(x)-1
+          success = is_prime(x) .eqv. is_prime_c_32(x)
+          if (.not.success) then
+             print *, 'discrepancy at x=',x
+          end if
+       end do
 
     end function test_vs_c
 

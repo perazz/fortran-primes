@@ -147,6 +147,7 @@
        integer(IP), intent(in) :: n
        is_prime = is_prime64(int(n,WP))
     end function is_prime32
+
     logical function is_prime64(n) result(is_prime)
        integer(WP), intent(in) :: n
 
@@ -493,7 +494,7 @@
         return
     end function is_prime_32
 
-    integer(WP) function witnesses(n)
+    elemental integer(WP) function witnesses(n)
        integer(WP), intent(in) :: n
        integer(WP) :: i
        i =      ieor(shifta(n,16), n) * int(z'45d9f3b',WP)
@@ -502,7 +503,7 @@
        witnesses = int(witnesses32(i+1_WP),WP)
     end function witnesses
 
-    integer(IP) function witnesses_for_64(n)
+    elemental integer(IP) function witnesses_for_64(n)
        integer(WP), intent(in) :: n
        integer(WP) :: i
        i =      ieor(shifta(n,32), n) * int(z'45d9f3b3335b369',WP)
