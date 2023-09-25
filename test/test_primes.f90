@@ -40,7 +40,7 @@ program test_primes
 
     ! Perform tests
     call add_test(test_first_10000())
-    !call add_test(test_miller_rabin())
+    call add_test(test_is_prime())
 
 
     if (nfailed>0) write(*,fmt_failed)this_test,npassed,nfailed
@@ -75,6 +75,30 @@ program test_primes
                   all(primes(2,tenthousandth) == pack(p1_to_10000,p1_to_10000>=2))
 
     end function test_first_10000
+
+    logical function test_is_prime() result(success)
+!
+!    print *, '1000000007 = ',is_prime(1000000007)
+!    print *, '1000000009 = ',is_prime(1000000009)
+!    print *, '1000000011 = ',is_prime(1000000011)
+!    print *, '1000000013 = ',is_prime(1000000013)
+!    print *, '1000000015 = ',is_prime(1000000015)
+!    print *, '1000000017 = ',is_prime(1000000017)
+!    print *, '1000000019 = ',is_prime(1000000019)
+
+       success = .not.is_prime(1000000003); if (.not.success) return
+       success = .not.is_prime(1000000005); if (.not.success) return
+       success =      is_prime(1000000007); if (.not.success) return
+       success =      is_prime(1000000009); if (.not.success) return
+       success = .not.is_prime(1000000011); if (.not.success) return
+       success = .not.is_prime(1000000013); if (.not.success) return
+       success = .not.is_prime(1000000015); if (.not.success) return
+       success = .not.is_prime(1000000017); if (.not.success) return
+       success =      is_prime(1000000019); if (.not.success) return
+       success = .not.is_prime(1000000021); if (.not.success) return
+       success = .not.is_prime(1000000023); if (.not.success) return
+
+    end function test_is_prime
 
     ! Test miller rabin test against the table of first primes
     logical function test_miller_rabin() result(success)

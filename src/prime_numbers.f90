@@ -33,7 +33,8 @@
     private
 
     ! Publicly accessible procedures
-    public :: prime,is_prime
+    public :: prime
+    public :: is_prime
     public :: create_primes
     public :: n_primes
     public :: miller_rabin_test,witnesses
@@ -42,11 +43,13 @@
     public :: primes
     public :: primes_mask
 
+    ! Return a list of primes within a given integer range (or upper bound)
     interface primes
         module procedure primes_bounds
         module procedure primes_limit
     end interface primes
 
+    ! Return a logical mask of primes within a given integer range (or upper bound)
     interface primes_mask
         module procedure primes_mask_hi
         module procedure primes_mask_bounds
@@ -145,12 +148,13 @@
           is_prime = n==2
        elseif (n<N_SMALL) then
           ! Look-up table
-          is_prime = min_factor(n)==n
+          is_prime = odd_min_factor(n)==n
        elseif (any(mod(n,SIMPLE_FACTORS)==0)) then
           ! Very large number. Test simple factors first
           is_prime = .false.
        elseif (n<2_IP**32) then
           ! Perform Miller-Rabin test
+          print *, 'witness = ',witnesses(n),' n=',n
           is_prime = miller_rabin_test(witnesses(n),n)
        else
           is_prime = miller_rabin_test(witnesses(n),n)
@@ -159,6 +163,14 @@
        end if
 
     end function is_prime
+
+    ! Return the minimum factor of n for 1) n odd; 2) 1<n<N_SMALL
+    elemental integer(IP) function odd_min_factor(n)
+       integer(IP), intent(in) :: n
+       integer(IP) :: m
+       m = int(min_factor(shiftr(n,1)),IP)
+       odd_min_factor = merge(n,m,m==1_IP)
+    end function odd_min_factor
 
     ! Find position of stored point x in list, list *already* sorted in ascending order
     pure recursive subroutine quickfind_int(list,x,it,bounds)
@@ -420,7 +432,7 @@
     end function trailing_zeros
 
     ! n > 2, an odd integer to be tested for primality
-    elemental logical function miller_rabin_test(a, n) result(is_prime)
+    logical(LP) function miller_rabin_test(a, n) result(is_prime)
 
        ! a parameter that determines the accuracy of the test, i.e. a random in [2, n−1]
        integer(IP), intent(in) :: a
@@ -432,9 +444,7 @@
        integer(IP) :: s,d,x,t
 
        ! Probably not prime
-       is_prime = .false.
-
-       if (n<=2) return
+       is_prime = .false._LP
 
        ! Write (n-1) as 2s*d (d odd) by factoring powers of 2 from n − 1
        s = trailing_zeros(n-1)
@@ -442,14 +452,22 @@
 
        x = mod(a**d,n) ! can grow quickly
 
+       print *, 's,d,x',s,d,x
+
        if (x/=1) then
           t = s
           do while (x/=n-1)
              t = t-1
-             if (t<=0) return
+             if (t<=0) then
+                is_prime = .false.
+                return
+             endif
 
-             x = int(mod(int(x,WP)**2,n),IP)
-             if (x==1) return
+             x = int(mod(int(x,WP)**2,int(n,WP)),IP)
+             if (x==1) then
+                is_prime = .false.
+                return
+             endif
 
           end do
        end if
@@ -457,7 +475,7 @@
 
     end function miller_rabin_test
 
-    elemental integer(IP) function witnesses(n)
+    integer(IP) function witnesses(n)
        integer(IP), intent(in) :: n
        integer(WP) :: i,nw
 
@@ -487,9 +505,9 @@
 
        nw = int(n,WP)
 
-       i = ieor(shifta(nw,16),nw) * int(z'45d9f3b',WP)
-       i = ieor(shifta(i,16), i ) * int(z'45d9f3b',WP)
-       i = iand(ieor(shifta(i,16), i), 255_WP) + 1_WP
+       i =      ieor(shifta(nw,16),nw) * int(z'45d9f3b',WP)
+       i =      ieor(shifta(i,16),  i) * int(z'45d9f3b',WP)
+       i = iand(ieor(shifta(i,16),  i), 255_WP) + 1_WP
        witnesses = int(bases(i),IP)
     end function witnesses
 

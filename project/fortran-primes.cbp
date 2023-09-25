@@ -30,15 +30,27 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-fmax-array-constructor=400000" />
 		</Compiler>
 		<Linker>
 			<Add library="gfortran" />
 			<Add library="quadmath" />
 		</Linker>
-		<Unit filename="../src/fortran_io.f90" />
-		<Unit filename="../src/generate_module.f90" />
-		<Unit filename="../src/prime_numbers.f90" />
-		<Unit filename="../test/test_primes.f90" />
+		<Unit filename="../src/fortran_io.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="../src/generate_module.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="../src/prime_constants.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="../src/prime_numbers.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="../test/test_primes.f90">
+			<Option weight="2" />
+		</Unit>
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>
