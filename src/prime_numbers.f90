@@ -37,11 +37,17 @@
     public :: is_prime
     public :: create_primes
     public :: n_primes
-    public :: miller_rabin_test,witnesses
+    public :: witnesses
     public :: generate_min_factors
 
     public :: primes
     public :: primes_mask
+
+    ! Check if an integer is prime
+    interface is_prime
+        module procedure is_prime32
+        module procedure is_prime64
+    end interface is_prime
 
     ! Return a list of primes within a given integer range (or upper bound)
     interface primes
@@ -64,8 +70,8 @@
 
     ! Return the n-th prime number
     function prime(n) result(prime_number)
-        integer, intent(in) :: n
-        integer             :: prime_number
+        integer(IP), intent(in) :: n
+        integer(IP)             :: prime_number
 
         select case (n)
            case (        1:  chunk); prime_number = p1_to_10000(n)
@@ -135,11 +141,17 @@
 
     end function primes_bounds
 
-    ! Detect if an integer number is prime
-    logical function is_prime(n)
-       integer, intent(in) :: n
 
-       integer(IP), parameter :: SIMPLE_FACTORS(*) = [3,5,7,11,13,17,19,23]
+    ! Detect if an integer number is prime
+    logical function is_prime32(n) result(is_prime)
+       integer(IP), intent(in) :: n
+       is_prime = is_prime64(int(n,WP))
+    end function is_prime32
+    logical function is_prime64(n) result(is_prime)
+       integer(WP), intent(in) :: n
+
+       integer(WP), parameter :: SIMPLE_FACTORS(*) = [3,5,7,11,13,17,19,23]
+       integer(IP) :: w
 
        if (n<2) then
           is_prime = .false.
@@ -152,23 +164,31 @@
        elseif (any(mod(n,SIMPLE_FACTORS)==0)) then
           ! Very large number. Test simple factors first
           is_prime = .false.
-       elseif (n<2_IP**32) then
+       elseif (n<2_WP**32) then
           ! Perform Miller-Rabin test
-          print *, 'witness = ',witnesses(n),' n=',n
-          is_prime = miller_rabin_test(witnesses(n),n)
+          is_prime = is_prime_32(int(n,IP), int(witnesses(n),IP))
        else
-          is_prime = miller_rabin_test(witnesses(n),n)
-!    miller_rabbin_test(2, n) || return false
-!    return lucas_test(widen(n))
+
+          if (.not.is_SPRP64(n,2_WP)) then
+              is_prime = .false.
+              return
+          else
+
+              w = witnesses_for_64(n)
+
+              is_prime =       is_SPRP64(n,int(iand(w,4095_IP),WP)) &
+                         .and. is_SPRP64(n,int(shifta(w,12_IP),WP))
+          end if
+
        end if
 
-    end function is_prime
+    end function is_prime64
 
     ! Return the minimum factor of n for 1) n odd; 2) 1<n<N_SMALL
-    elemental integer(IP) function odd_min_factor(n)
-       integer(IP), intent(in) :: n
-       integer(IP) :: m
-       m = int(min_factor(shiftr(n,1)),IP)
+    elemental integer(WP) function odd_min_factor(n)
+       integer(WP), intent(in) :: n
+       integer(WP) :: m
+       m = int(min_factor(shifta(n,1)),WP)
        odd_min_factor = merge(n,m,m==1_IP)
     end function odd_min_factor
 
@@ -420,96 +440,76 @@
     end subroutine create_primes
 
     ! Return number of trailing zeros in the bitwise representation
-    elemental integer(IP) function trailing_zeros(n) result(nzero)
-       integer(IP), intent(in) :: n
+    elemental integer(WP) function trailing_zeros(n) result(nzero)
+       integer(WP), intent(in) :: n
 
-       integer(IP) :: pos
-       nzero = 0
-       do pos=0,bit_size(n)-1
+       integer(WP) :: pos
+       nzero = 0_WP
+       do pos=0,bit_size(n)-1_WP
            if (btest(n,pos)) return
-           nzero = nzero+1
+           nzero = nzero+1_WP
        end do
     end function trailing_zeros
 
-    ! n > 2, an odd integer to be tested for primality
-    logical(LP) function miller_rabin_test(a, n) result(is_prime)
+    ! http://people.ksp.sk/~misof/primes
+    elemental logical(LP) function is_prime_32(n, a)
+        integer(IP), intent(in) :: n,a
 
-       ! a parameter that determines the accuracy of the test, i.e. a random in [2, n−1]
-       integer(IP), intent(in) :: a
+        integer(IP) :: d,s,r,aa
+        integer(WP) :: cur,pw
 
-       ! n > 2, an odd integer to be tested for primality
-       integer(IP), intent(in) :: n
+        aa = a
+        d  = n-1_IP
+        s  = 0_IP
 
-       !> Local variables
-       integer(IP) :: s,d,x,t
+        ! Find trailing zeros
+        do while (iand(d,1_IP)==0)
+            s = s+1_IP
+            d = shifta(d,1)
+        end do
 
-       ! Probably not prime
-       is_prime = .false._LP
+        cur = 1_WP
+        pw  = d
 
-       ! Write (n-1) as 2s*d (d odd) by factoring powers of 2 from n − 1
-       s = trailing_zeros(n-1)
-       d = shiftr(n-1,s)
+        do while (pw/=0)
+            if (iand(pw,1_WP)/=0) cur = mod(cur*aa,n)
+            aa = int(mod(int(aa,WP)**2,n),IP)
+            pw = shifta(pw,1)
+        end do
 
-       x = mod(a**d,n) ! can grow quickly
+        if (cur==1_WP) then
+            is_prime_32 = .true._LP
+            return
+        end if
 
-       print *, 's,d,x',s,d,x
-
-       if (x/=1) then
-          t = s
-          do while (x/=n-1)
-             t = t-1
-             if (t<=0) then
-                is_prime = .false.
+        do r=0,s-1
+            if (cur==n-1) then
+                is_prime_32 = .true._LP
                 return
-             endif
+            end if
+            cur = mod(cur**2,n)
+        end do
+        is_prime_32 = .false._LP
+        return
+    end function is_prime_32
 
-             x = int(mod(int(x,WP)**2,int(n,WP)),IP)
-             if (x==1) then
-                is_prime = .false.
-                return
-             endif
-
-          end do
-       end if
-       is_prime = .true.
-
-    end function miller_rabin_test
-
-    integer(IP) function witnesses(n)
-       integer(IP), intent(in) :: n
-       integer(WP) :: i,nw
-
-       integer(IP), parameter :: bases(*) = [ &
-            15591,  2018,   166,  7429,  8064, 16045, 10503,  4399,  1949,  1295,  2776,  3620,&
-              560,  3128,  5212,  2657,  2300,  2021,  4652,  1471,  9336,  4018,  2398, 20462,&
-            10277,  8028,  2213,  6219,   620,  3763,  4852,  5012,  3185,  1333,  6227,  5298,&
-             1074,  2391,  5113,  7061,   803,  1269,  3875,   422,   751,   580,  4729, 10239,&
-              746,  2951,   556,  2206,  3778,   481,  1522,  3476,   481,  2487,  3266,  5633,&
-              488,  3373,  6441,  3344,    17, 15105,  1490,  4154,  2036,  1882,  1813,   467,&
-             3307, 14042,  6371,   658,  1005,   903,   737,  1887,  7447,  1888,  2848,  1784,&
-             7559,  3400,   951, 13969,  4304,   177,    41, 19875,  3110, 13221,  8726,   571,&
-             7043,  6943,  1199,   352,  6435,   165,  1169,  3315,   978,   233,  3003,  2562,&
-             2994, 10587, 10030,  2377,  1902,  5354,  4447,  1555,   263, 27027,  2283,   305,&
-              669,  1912,   601,  6186,   429,  1930, 14873,  1784,  1661,   524,  3577,   236,&
-             2360,  6146,  2850, 55637,  1753,  4178,  8466,   222,  2579,  2743,  2031,  2226,&
-             2276,   374,  2132,   813, 23788,  1610,  4422,  5159,  1725,  3597,  3366, 14336,&
-              579,   165,  1375, 10018, 12616,  9816,  1371,   536,  1867, 10864,   857,  2206,&
-             5788,   434,  8085, 17618,   727,  3639,  1595,  4944,  2129,  2029,  8195,  8344,&
-             6232,  9183,  8126,  1870,  3296,  7455,  8947, 25017,   541, 19115,   368,   566,&
-             5674,   411,   522,  1027,  8215,  2050,  6544, 10049,   614,   774,  2333,  3007,&
-            35201,  4706,  1152,  1785,  1028,  1540,  3743,   493,  4474,  2521, 26845,  8354,&
-              864, 18915,  5465,  2447,    42,  4511,  1660,   166,  1249,  6259,  2553,   304,&
-              272,  7286,    73,  6554,   899,  2816,  5197, 13330,  7054,  2818,  3199,   811,&
-              922,   350,  7514,  4452,  3449,  2663,  4708,   418,  1621,  1171,  3471,    88,&
-            11345,   412,  1559,   194]
-
-       nw = int(n,WP)
-
-       i =      ieor(shifta(nw,16),nw) * int(z'45d9f3b',WP)
-       i =      ieor(shifta(i,16),  i) * int(z'45d9f3b',WP)
-       i = iand(ieor(shifta(i,16),  i), 255_WP) + 1_WP
-       witnesses = int(bases(i),IP)
+    integer(WP) function witnesses(n)
+       integer(WP), intent(in) :: n
+       integer(WP) :: i
+       i =      ieor(shifta(n,16), n) * int(z'45d9f3b',WP)
+       i =      ieor(shifta(i,16), i) * int(z'45d9f3b',WP)
+       i = iand(ieor(shifta(i,16), i), 255_WP)
+       witnesses = int(witnesses32(i+1_WP),WP)
     end function witnesses
+
+    integer(IP) function witnesses_for_64(n)
+       integer(WP), intent(in) :: n
+       integer(WP) :: i
+       i =      ieor(shifta(n,32), n) * int(z'45d9f3b3335b369',WP)
+       i =      ieor(shifta(i,32), i) * int(z'3335b36945d9f3b',WP)
+       i = iand(ieor(shifta(i,32), i), 16383_WP)
+       witnesses_for_64 = witnesses64(i+1_WP)
+    end function witnesses_for_64
 
     elemental integer(IP) function wheel_index(n)
        integer(IP), intent(in) :: n
@@ -636,7 +636,7 @@
              q = p**2
              j = iand(i-1,7_IP)+1_IP
              do while (q<=m)
-                mask(wheel_index(q)) = .false._LP
+                if (wheel_index(q)<=n) mask(wheel_index(q)) = .false._LP
                 q = q+wheel(j)*p
                 j = iand(j,7_IP)+1_IP
              end do
@@ -691,6 +691,80 @@
        end do
 
     end function primes_mask_ge7_bounds
+
+    ! given 0 <= a,b,n < 2^64, computes (a*b)%n without overflow
+    elemental integer(WP) function safe_mul(a,b,n)
+       integer(WP), intent(in) :: a,b,n
+
+       integer(QP) :: qa,qn
+
+       ! 128bit
+       qa = int(a,QP)
+       qn = int(n,QP)
+
+       safe_mul = int(mod(qa*b,qn),WP)
+    end function safe_mul
+
+    ! given 0 <= a,b,n < 2^64, computes (a^b)%n without overflow
+    elemental integer(WP) function safe_exp(a,b,n) result(res)
+       integer(WP), intent(in) :: a,b,n
+
+       integer(WP) :: pw,qa
+       integer(IP) :: i
+
+       res = 1
+       pw  = 1
+       qa  = a
+
+       i   = 0
+       do while (i<64 .and. pw<=b)
+          if (iand(b,pw)/=0) res = safe_mul(res,qa,n)
+          qa = safe_mul(qa,qa,n)
+          pw = shiftl(pw,1)
+          i = i+1
+       end do
+
+    end function safe_exp
+
+    elemental logical(LP) function is_SPRP64(n,a) result(is_prime)
+       integer(WP), intent(in) :: n,a
+
+       integer(WP) :: d,cur
+       integer(IP) :: s,r
+
+       if (n==a) then
+          is_prime = .true._LP
+          return
+       elseif (mod(n,a)==0) then
+          is_prime = .false.
+          return
+       end if
+
+       ! Find trailing zero bits
+       d = n-1_WP
+       s = 0_IP
+       do while (mod(d,2_WP)==0_WP)
+           s = s+1_IP
+           d = d/2_WP
+       end do
+
+       cur = safe_exp(a,d,n)
+       if (cur==1_WP) then
+          is_prime = .true._LP
+          return
+       end if
+
+       r = 0;
+       do while (r<s)
+          if (cur==n-1_WP) then
+             is_prime = .true._LP
+             return
+          end if
+          cur = safe_mul(cur,cur,n)
+          r = r+1
+       end do
+       is_prime = .false._LP
+    end function is_SPRP64
 
   end module prime_numbers
 

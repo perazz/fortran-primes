@@ -25,6 +25,7 @@ program test_primes
 
     use prime_numbers
     use prime_constants
+    use fortran_io
     use iso_fortran_env, only: output_unit
 
     implicit none
@@ -33,6 +34,7 @@ program test_primes
     integer :: nfailed,npassed
 
     ! Local variables
+    integer, allocatable :: w64(:)
     integer      :: i,j,ierr
     character(*), parameter :: fmt_failed = "(1x,a,' has ',i0,' test passed, ',i0,' not passed.')"
     nfailed = 0
@@ -41,15 +43,18 @@ program test_primes
     ! Perform tests
     call add_test(test_first_10000())
     call add_test(test_is_prime())
-
-
-    if (nfailed>0) write(*,fmt_failed)this_test,npassed,nfailed
+    call add_test(test_vs_c())
 
     if (nfailed>0) then
+        write(*,fmt_failed)this_test,npassed,nfailed
         stop -1
     else
         stop 0
     endif
+
+
+
+
 
     return
 
@@ -78,50 +83,40 @@ program test_primes
 
     logical function test_is_prime() result(success)
 !
-!    print *, '1000000007 = ',is_prime(1000000007)
-!    print *, '1000000009 = ',is_prime(1000000009)
-!    print *, '1000000011 = ',is_prime(1000000011)
-!    print *, '1000000013 = ',is_prime(1000000013)
-!    print *, '1000000015 = ',is_prime(1000000015)
-!    print *, '1000000017 = ',is_prime(1000000017)
-!    print *, '1000000019 = ',is_prime(1000000019)
-
-       success = .not.is_prime(1000000003); if (.not.success) return
-       success = .not.is_prime(1000000005); if (.not.success) return
-       success =      is_prime(1000000007); if (.not.success) return
-       success =      is_prime(1000000009); if (.not.success) return
-       success = .not.is_prime(1000000011); if (.not.success) return
-       success = .not.is_prime(1000000013); if (.not.success) return
-       success = .not.is_prime(1000000015); if (.not.success) return
-       success = .not.is_prime(1000000017); if (.not.success) return
-       success =      is_prime(1000000019); if (.not.success) return
-       success = .not.is_prime(1000000021); if (.not.success) return
-       success = .not.is_prime(1000000023); if (.not.success) return
+       success = .not.is_prime( 1000000003); if (.not.success) return
+       success = .not.is_prime( 1000000005); if (.not.success) return
+       success =      is_prime( 1000000007); if (.not.success) return
+       success =      is_prime( 1000000009); if (.not.success) return
+       success = .not.is_prime( 1000000011); if (.not.success) return
+       success = .not.is_prime( 1000000013); if (.not.success) return
+       success = .not.is_prime( 1000000015); if (.not.success) return
+       success = .not.is_prime( 1000000017); if (.not.success) return
+       success = .not.is_prime( 1000000019); if (.not.success) return
+       success =      is_prime( 1000000021); if (.not.success) return
+       success = .not.is_prime( 1000000023); if (.not.success) return
+       success =      is_prime(10000000019_WP); if (.not.success) return
+       success = .not.is_prime(10000000020_WP); if (.not.success) return
+       success = .not.is_prime(10000000021_WP); if (.not.success) return
 
     end function test_is_prime
 
-    ! Test miller rabin test against the table of first primes
-    logical function test_miller_rabin() result(success)
+    logical function test_vs_c() result(success)
+       use iso_c_binding
 
-       integer :: i,nfail
+       interface
+           logical(c_bool) function is_SPRP_c_32(n,a) bind(C,name="is_SPRP_c_32")
+              use iso_c_binding, only: c_bool,c_int32_t
+              integer(c_int32_t), intent(in), value :: n,a
+           end function is_SPRP_c_32
+           logical(c_bool) function is_prime_c_32(x) bind(C,name="is_prime_c_32")
+              use iso_c_binding, only: c_bool,c_int32_t
+              integer(c_int32_t), intent(in), value :: x
+           end function is_prime_c_32
+       end interface
 
-       nfail = 0
+       integer(c_int32_t) :: x
 
-       whole_table: do i=2,10000
-
-          success = miller_rabin_test(witnesses(i),i)
-          if (success.neqv.is_prime(i)) then
-              print 1, i, is_prime(i)
-              nfail = nfail+1
-          endif
-
-       end do whole_table
-
-       success = nfail==0
-
-       1 format('miller-rabin: test on ',i0,', is prime=',l1,' not recognized such by miller-rabin test')
-
-    end function test_miller_rabin
+    end function test_vs_c
 
     logical function make_min_factors() result(success)
 

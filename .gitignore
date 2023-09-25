@@ -2,3 +2,6 @@
 project/prime_constants.mod
 *.mod
 *.depend
+*.o
+*.layout
+*.exe

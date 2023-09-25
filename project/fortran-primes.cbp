@@ -13,6 +13,8 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add option="-g" />
+					<Add option="-fcheck=all" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
