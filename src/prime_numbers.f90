@@ -1,29 +1,22 @@
-!   ************************************************************************************************
-!   **                                                                                            **
-!   **                  |\   -  -.   ./                                                           **
-!   **                  | \./ \/ | ./ /     __________  ___________ __________                    **
-!   **                __|         /  /     / ____/ __ \/ ____/ ___// ____/ __ \                   **
-!   **                \    .        /.-/  / /_  / /_/ / __/  \__ \/ /   / / / /                   **
-!   **                 \   |\.|\/|    /  / __/ / _, _/ /___ ___/ / /___/ /_/ /                    **
-!   **                  \__\     /___/  /_/   /_/ |_/_____//____/\____/\____/                     **
-!   **                                                                                            **
-!   **                                     FRESCO-SpeedCHEM                                       **
-!   **            A code for internal combustion engine flows with chemical kinetics              **
-!   **                                                                                            **
-!   ************************************************************************************************
-!   **                                                                                            **
-!   **    prime_number                                                                            **
-!   **    A collection of the first 100008 prime numbers                                          **
-!   **                                                                                            **
-!   ************************************************************************************************
-!   **                                                                                            **
-!>  **    @author Federico Perini                                                                 **
-!   **    Author     : Federico Perini                                                            **
-!   **    Created    : monday ,  08/09/2014                                                       **
-!   **    Last update: monday ,  08/09/2014                                                       **
-!   **                                                                                            **
-!   ************************************************************************************************
-  module prime_numbers
+!  ************************************************************************************************************
+!
+!                                        ____  ____  ______  ______________
+!                                       / __ \/ __ \/  _/  |/  / ____/ ___/
+!                                      / /_/ / /_/ // // /|_/ / __/  \__ \
+!                                     / ____/ _, _// // /  / / /___ ___/ /
+!                                    /_/   /_/ |_/___/_/  /_/_____//____/
+!
+!                                         Constants and parameters
+!
+!  MIT License
+!
+!  Copyright (c) 2014-2023 Federico Perini
+!  Parts of this code Copyright (c) the Primes.jl contributors and
+!  All codes published under https://people.ksp.sk/~misof/primes/
+!  are available under the CC BY-NC 4.0 Int'l license.
+!
+!  ************************************************************************************************************
+module prime_numbers
 
     use fortran_io
     use iso_fortran_env
@@ -174,9 +167,7 @@
               is_prime = .false.
               return
           else
-
               w = witnesses_for_64(n)
-
               is_prime =       is_SPRP64(n,int(iand(w,4095_IP),WP)) &
                          .and. is_SPRP64(n,int(shifta(w,12_IP),WP))
           end if
@@ -767,5 +758,5 @@
        is_prime = .false._LP
     end function is_SPRP64
 
-  end module prime_numbers
+end module prime_numbers
 

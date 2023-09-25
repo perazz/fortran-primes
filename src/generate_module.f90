@@ -1,4 +1,27 @@
-module generate_prime_numbers_module 
+!  ************************************************************************************************************
+!
+!                                        ____  ____  ______  ______________
+!                                       / __ \/ __ \/  _/  |/  / ____/ ___/
+!                                      / /_/ / /_/ // // /|_/ / __/  \__ \
+!                                     / ____/ _, _// // /  / / /___ ___/ /
+!                                    /_/   /_/ |_/___/_/  /_/_____//____/
+!
+!                                         Constants and parameters
+!
+!  MIT License
+!
+!  Copyright (c) 2014-2023 Federico Perini
+!  Parts of this code Copyright (c) the Primes.jl contributors and
+!  All codes published under https://people.ksp.sk/~misof/primes/
+!  are available under the CC BY-NC 4.0 Int'l license.
+!
+!  ************************************************************************************************************
+!
+!     automate generation of the first primes module
+!     Created: 09/23/2023
+!
+!  ************************************************************************************************************
+module generate_prime_numbers_module
     use fortran_io
     implicit none
     contains

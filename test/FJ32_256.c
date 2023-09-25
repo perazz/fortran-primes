@@ -3,6 +3,7 @@ extern "C" {
 #endif // __cplusplus
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // https://people.ksp.sk/~misof/primes/FJ32_256.cc
 // All codes published under https://people.ksp.sk/~misof/primes/
