@@ -45,6 +45,7 @@ program test_primes
     call add_test(test_first_10000())
     call add_test(test_is_prime())
     call add_test(test_vs_c())
+    call add_test(test_next_prime())
 
     write(*,fmt_failed)this_test,npassed,nfailed
     if (nfailed>0) then
@@ -138,6 +139,16 @@ program test_primes
        success = .true.
 
     end function make_min_factors
+
+    logical function test_next_prime() result(success)
+
+       success = .true.
+       !success = next_prime(-20,2) == 2;  if (.not.success) return
+       !success = next_prime(  4,5) == 19; if (.not.success) return
+       !success = next_prime(  0,2) == 2;  if (.not.success) return
+       !success = next_prime(  0,3) == 3;  if (.not.success) return
+
+    end function test_next_prime
 
 
 end program test_primes

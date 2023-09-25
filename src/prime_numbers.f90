@@ -28,6 +28,7 @@ module prime_numbers
     ! Publicly accessible procedures
     public :: prime
     public :: is_prime
+    public :: next_prime
     public :: create_primes
     public :: n_primes
     public :: witnesses
@@ -757,6 +758,45 @@ module prime_numbers
        end do
        is_prime = .false._LP
     end function is_SPRP64
+
+
+    ! Find the next prime number
+    integer(IP) function next_prime(n, i)
+       integer(IP), intent(in) :: n
+       integer(IP), optional, intent(in) :: i
+
+       integer :: usen,usei
+
+       usei = 1_IP; if (present(i)) usei = i
+       usen = max(n,2_IP)
+
+       ! If possible, locate the next prime using the look-up table
+
+       if (usei<=0) stop 'i-th next prime to be found must be >=1'
+
+       if (usen == 2_IP) then
+          if (usei <= 1_IP) then
+              next_prime = usen
+              return
+          else
+              usen = usen+1_IP
+              usei = usei-1_IP
+          endif
+       elseif (mod(usen,2_IP)==0) then
+          usen = usen + 1_IP
+       endif
+
+       do while (usei>0)
+           do while (.not.is_prime(usen))
+              usen = usen+1_IP
+           end do
+           usei = usei-1_IP
+           if (usei <= 0) exit
+           usen = usen+1_IP
+       end do
+       next_prime = usen
+    end function next_prime
+
 
 end module prime_numbers
 
