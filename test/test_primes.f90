@@ -80,7 +80,7 @@ program test_primes
     end function test_first_10000
 
     logical function test_is_prime() result(success)
-!
+
        success = .not.is_prime( 1000000003); if (.not.success) return
        success = .not.is_prime( 1000000005); if (.not.success) return
        success =      is_prime( 1000000007); if (.not.success) return
@@ -95,6 +95,9 @@ program test_primes
        success =      is_prime(10000000019_WP); if (.not.success) return
        success = .not.is_prime(10000000020_WP); if (.not.success) return
        success = .not.is_prime(10000000021_WP); if (.not.success) return
+
+       ! Clausen prime
+       success =      is_prime(67280421310721_WP); if (.not.success) return
 
     end function test_is_prime
 

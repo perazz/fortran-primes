@@ -239,18 +239,6 @@ module prime_numbers
        end if
     end subroutine quickfind_int
 
-    ! Return number of trailing zeros in the bitwise representation
-    elemental integer(WP) function trailing_zeros(n) result(nzero)
-       integer(WP), intent(in) :: n
-
-       integer(WP) :: pos
-       nzero = 0_WP
-       do pos=0,bit_size(n)-1_WP
-           if (btest(n,pos)) return
-           nzero = nzero+1_WP
-       end do
-    end function trailing_zeros
-
     ! http://people.ksp.sk/~misof/primes
     elemental logical(LP) function is_prime_32(n, a)
         integer(IP), intent(in) :: n,a
@@ -260,13 +248,10 @@ module prime_numbers
 
         aa = a
         d  = n-1_IP
-        s  = 0_IP
 
-        ! Find trailing zeros
-        do while (iand(d,1_IP)==0)
-            s = s+1_IP
-            d = shifta(d,1)
-        end do
+        ! Find trailing zeros and shift by them
+        s  = trailz(d)
+        d  = shifta(d,s)
 
         cur = 1_WP
         pw  = d
@@ -540,13 +525,10 @@ module prime_numbers
           return
        end if
 
-       ! Find trailing zero bits
+       ! Find trailing zero bits and shift by them
        d = n-1_WP
-       s = 0_IP
-       do while (mod(d,2_WP)==0_WP)
-           s = s+1_IP
-           d = d/2_WP
-       end do
+       s = trailz(d)
+       d = shifta(d,s)
 
        cur = safe_exp(a,d,n)
        if (cur==1_WP) then
