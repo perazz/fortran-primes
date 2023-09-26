@@ -6,10 +6,11 @@ The base code was spun off the FRESCO CFD code, while additional functions are m
 
 ### API
 
-function      | Description 
----        | ---         
-`prime(n)` | Return the $n$-th prime number. 
-
+function      | type | Description 
+---        | --- | ---         
+`prime(n)` | `integer(IP)`, `integer(WP)` | Returns the $n$-th prime number. 
+`next_prime(n)` | `integer(IP)` | Returns the first prime number `p_i > n`
+`next_prime(n,i)` | `integer(IP)` | Returns the $i$-th next prime number `>n`
 
 ### 2D Spline interpolators:
 
