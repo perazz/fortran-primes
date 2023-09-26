@@ -142,11 +142,42 @@ program test_primes
 
     logical function test_next_prime() result(success)
 
-       success = .true.
-       !success = next_prime(-20,2) == 2;  if (.not.success) return
-       !success = next_prime(  4,5) == 19; if (.not.success) return
-       !success = next_prime(  0,2) == 2;  if (.not.success) return
-       !success = next_prime(  0,3) == 3;  if (.not.success) return
+       integer(IP), parameter :: N1(*) = [-1000, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 2**20, 2**30]
+       integer(IP), parameter :: N2(*) = [2, 2, 3, 5, 5, 7, 7, 11, 11, 11, 11, 13, 1048583, 1073741827]
+       integer(IP), parameter :: N3(*) = [3, 3, 5, 7, 7, 11, 11, 13, 13, 13, 13, 17, 1048589, 1073741831]
+
+       do i=1,size(N1)
+          success = next_prime(N1(i))==N2(i)
+          if (.not.success) then
+              print *, 'next_prime(',N1(i),') = ',N2(i),', but returned ',next_prime(N1(i))
+              return
+          end if
+          success = next_prime(N1(i),1)==N2(i)
+          if (.not.success) then
+              print *, 'next_prime(',N1(i),') = ',N2(i),', but returned ',next_prime(N1(i),1)
+              return
+          end if
+          success = next_prime(N1(i),2)==N3(i)
+          if (.not.success) then
+              print *, 'next_prime(',N1(i),',2) = ',N3(i),', but returned ',next_prime(N1(i),2)
+              return
+          end if
+       end do
+
+       ! The second prime number after -20 is 3 ([2, 3, 5, ...])
+       success = next_prime(-20,2) == 3; if (.not.success) return
+
+       ! The fifth prime number after 4 is 17 ([5, 7, 11, 13, 17]), etc.
+       success = next_prime(  4)   == 5;  if (.not.success) return
+       success = next_prime(  4,1) == 5;  if (.not.success) return
+       success = next_prime(  4,2) == 7;  if (.not.success) return
+       success = next_prime(  4,3) == 11; if (.not.success) return
+       success = next_prime(  4,4) == 13; if (.not.success) return
+       success = next_prime(  4,5) == 17; if (.not.success) return
+       success = next_prime(  4,6) == 19; if (.not.success) return
+
+       success = next_prime(  0,2) == 3;  if (.not.success) return
+       success = next_prime(  0,3) == 5;  if (.not.success) return
 
     end function test_next_prime
 

@@ -13,7 +13,6 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
-					<Add option="-g" />
 					<Add option="-fcheck=all" />
 				</Compiler>
 			</Target>
@@ -49,6 +48,9 @@
 		</Unit>
 		<Unit filename="../src/prime_numbers.f90">
 			<Option weight="1" />
+		</Unit>
+		<Unit filename="../test/FJ32_256.c">
+			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../test/test_primes.f90">
 			<Option weight="2" />
