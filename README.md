@@ -8,7 +8,8 @@ The base code was spun off the FRESCO CFD code, while additional functions are m
 
 function      | Description 
 ---        | ---         
-`fitpack_curve` | 1D spline interpolation of scattered data, $y = s(x)$ | up to 5
+`prime(n)` | Return the $n$-th prime number. 
+
 
 ### 2D Spline interpolators:
 
@@ -21,5 +22,5 @@ An automated build is available via the [Fortran Package Manager](https://github
 
 ```
 [dependencies]
-fitpack = { git="https://github.com/perazz/fortran-primes.git" }
+fortran-primes = { git="https://github.com/perazz/fortran-primes.git" }
 ```
