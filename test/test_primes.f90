@@ -130,7 +130,7 @@ program test_primes
        integer, allocatable :: min_factors_table(:)
 
        ! Generate list of min factors
-       integer :: N_SMALL = 2**18
+       integer :: N_SMALL = 2**17
 
        ! min_factors = the minimum factor of n for odd n, if 3<n<N_SMALL_FACTORS. Return 1 if prime
        min_factors_table = generate_min_factors(N_SMALL)
