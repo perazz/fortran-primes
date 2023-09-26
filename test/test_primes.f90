@@ -26,7 +26,6 @@ program test_primes
 
     use prime_numbers
     use prime_constants
-    use fortran_io
     use iso_fortran_env, only: output_unit
 
     implicit none
@@ -123,23 +122,6 @@ program test_primes
        end do
 
     end function test_vs_c
-
-    logical function make_min_factors() result(success)
-
-       use fortran_io
-
-       integer, allocatable :: min_factors_table(:)
-
-       ! Generate list of min factors
-       integer :: N_SMALL = 2**17
-
-       ! min_factors = the minimum factor of n for odd n, if 3<n<N_SMALL_FACTORS. Return 1 if prime
-       min_factors_table = generate_min_factors(N_SMALL)
-
-       call print_1d_array(output_unit,'min_factor',min_factors_table,'IP')
-       success = .true.
-
-    end function make_min_factors
 
     logical function test_next_prime() result(success)
 
