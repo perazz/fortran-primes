@@ -37,6 +37,11 @@ module prime_constants
     integer     , parameter :: chunk       = 10000
     integer     , parameter :: n_primes    = 5*chunk
 
+    ! Pointers to the storage for the prime factors and their multiplicities
+    integer(IP), parameter, public :: FACTORS_CHUNKSIZE = 2048
+    integer(IP), parameter, public :: FACTORS_PRIME     = 1
+    integer(IP), parameter, public :: FACTORS_POWER     = 2
+
     ! Prime generating functions, see:
     ! https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
     ! https://en.wikipedia.org/wiki/Wheel_factorization

@@ -30,6 +30,7 @@ module prime_numbers
     public :: is_prime
     public :: next_prime
     public :: create_primes
+    public :: prime_factors
     public :: n_primes
     public :: witnesses
     public :: generate_min_factors
@@ -761,42 +762,112 @@ module prime_numbers
 
 
     ! Find the next prime number
-    integer(IP) function next_prime(n, i)
+    elemental integer(IP) function next_prime(n, i)
        integer(IP), intent(in) :: n
        integer(IP), optional, intent(in) :: i
 
        integer :: usen,usei
 
        usei = 1_IP; if (present(i)) usei = i
-       usen = max(n,2_IP)
+       usen = max(n,1_IP)
 
        ! If possible, locate the next prime using the look-up table
+       if (usei<=0) then !stop 'i-th next prime to be found must be >=1'
+           next_prime = -huge(next_prime)
+           return
+       end if
 
-       if (usei<=0) stop 'i-th next prime to be found must be >=1'
-
-       if (usen == 2_IP) then
-          if (usei <= 1_IP) then
-              next_prime = usen
-              return
-          else
-              usen = usen+1_IP
-              usei = usei-1_IP
-          endif
-       elseif (mod(usen,2_IP)==0) then
-          usen = usen + 1_IP
+       ! Handle 2
+       if (usen<2_IP) then
+          ! Start from 2
+          usen = 2_IP
+          usei = usei-1
        endif
 
-       do while (usei>0)
-           do while (.not.is_prime(usen))
-              usen = usen+1_IP
+       if (usei<=0) then
+          next_prime = usen
+          return
+       end if
+
+       ! Ensure that the iteration starts from a non-prime number
+       if (mod(usen,2_IP)/=0) usen = usen + 1_IP
+
+       ! While I still have to find more
+       more_needed: do while (usei>0)
+
+           do while (usen==2_IP .or. .not.is_prime(usen))
+              usen = usen+1_IP  ! Skip all even numbers
            end do
+
+           ! Prime found
            usei = usei-1_IP
            if (usei <= 0) exit
+
+           ! Position to the next candidate
            usen = usen+1_IP
-       end do
+       end do more_needed
+
        next_prime = usen
     end function next_prime
 
+
+
+    ! Return all prime factors, and their multiplicities, of an integer
+    subroutine prime_factors(n,factors)
+        integer(IP), intent(in) :: n
+        integer(IP), allocatable, intent(out) :: factors(:,:)
+
+!        ! This buffer should be large enough that the product of the 1st 4196 primes
+!        ! is surely out of the current precision
+!        integer(IP) :: buffer(2,FACTORS_CHUNKSIZE),nfactors,remainder,prime
+!
+!        nfactors  = 1
+!        buffer(FACTORS_POWER,1) = 0
+!        remainder = abs(n)
+!        prime     = 2_IP
+!
+!        ! The easy test
+!        if (remainder<2_IP) then
+!           allocate(factors(2,0))
+!           return
+!        elseif (is_prime(remainder)) then
+!           allocate(factors(2,1))
+!           factors(FACTORS_PRIME,1) = remainder
+!           factors(FACTORS_POWER,1) = 1_IP
+!           return
+!        end if
+!
+!        do while (remainder>0_IP)
+!
+!            print *, 'remainder=',remainder,' prime=',prime
+!
+!            ! Prime is a factor
+!            if (mod(remainder,prime)==0) then
+!                remainder = remainder/prime
+!
+!                ! Add to multiplicity
+!                buffer(FACTORS_POWER,nfactors) = buffer(FACTORS_POWER,nfactors)+1_IP
+!
+!                if (remainder==1_IP) exit
+!            else
+!
+!                ! Should we close a previous factor?
+!                if (buffer(FACTORS_POWER,nfactors)>0) then
+!                    buffer(FACTORS_PRIME,nfactors)   = prime
+!                    buffer(FACTORS_POWER,nfactors+1) = 0
+!                    nfactors = nfactors+1
+!                end if
+!
+!                ! Try another prime
+!                prime = next_prime(prime)
+!
+!            end if
+!
+!        end do
+!
+!        allocate(factors(2,nfactors),source=buffer(:,1:nfactors))
+
+    end subroutine prime_factors
 
 end module prime_numbers
 

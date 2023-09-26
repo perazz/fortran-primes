@@ -46,6 +46,7 @@ program test_primes
     call add_test(test_is_prime())
     call add_test(test_vs_c())
     call add_test(test_next_prime())
+    !call add_test(test_factors())
 
     write(*,fmt_failed)this_test,npassed,nfailed
     if (nfailed>0) then
@@ -142,9 +143,9 @@ program test_primes
 
     logical function test_next_prime() result(success)
 
-       integer(IP), parameter :: N1(*) = [-1000, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 2**20, 2**30]
-       integer(IP), parameter :: N2(*) = [2, 2, 3, 5, 5, 7, 7, 11, 11, 11, 11, 13, 1048583, 1073741827]
-       integer(IP), parameter :: N3(*) = [3, 3, 5, 7, 7, 11, 11, 13, 13, 13, 13, 17, 1048589, 1073741831]
+       integer(IP), parameter :: N1(*) = [-1000, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,  2**20,2**30]
+       integer(IP), parameter :: N2(*) = [    2, 3, 5, 5, 7, 7,11,11,11,11,13,13,1048583,1073741827]
+       integer(IP), parameter :: N3(*) = [    3, 5, 7, 7,11,11,13,13,13,13,17,17,1048589,1073741831]
 
        do i=1,size(N1)
           success = next_prime(N1(i))==N2(i)
@@ -154,7 +155,7 @@ program test_primes
           end if
           success = next_prime(N1(i),1)==N2(i)
           if (.not.success) then
-              print *, 'next_prime(',N1(i),') = ',N2(i),', but returned ',next_prime(N1(i),1)
+              print *, 'next_prime(',N1(i),',1) = ',N2(i),', but returned ',next_prime(N1(i),1)
               return
           end if
           success = next_prime(N1(i),2)==N3(i)
@@ -168,6 +169,7 @@ program test_primes
        success = next_prime(-20,2) == 3; if (.not.success) return
 
        ! The fifth prime number after 4 is 17 ([5, 7, 11, 13, 17]), etc.
+       success = next_prime(  2)   == 3;  if (.not.success) return
        success = next_prime(  4)   == 5;  if (.not.success) return
        success = next_prime(  4,1) == 5;  if (.not.success) return
        success = next_prime(  4,2) == 7;  if (.not.success) return
@@ -180,6 +182,30 @@ program test_primes
        success = next_prime(  0,3) == 5;  if (.not.success) return
 
     end function test_next_prime
+
+    ! Test factors
+    logical function test_factors() result(success)
+
+        integer(IP) :: i
+        integer(IP), allocatable :: factors(:,:)
+
+        do i=1,999,2
+            call prime_factors(i,factors)
+            success = product(factors(FACTORS_PRIME,:)**factors(FACTORS_POWER,:))==i
+            if (.not.success) then
+                print 1, i,factors
+                return
+            end if
+        end do
+
+
+        1 format('prime_factors(',i0,') error: returned ',*(i0,'^',i0,:,' * '))
+
+
+    end function test_factors
+
+
+
 
 
 end program test_primes
