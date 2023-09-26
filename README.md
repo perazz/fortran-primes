@@ -16,7 +16,7 @@ function      | type | Description
 `primes_mask(lo,hi)` | `logical(LP)` | Logical mask ranged `(1:hi-lo+1)` flagging the prime numbers in the range from `lo` to `hi`.
 `next_prime(n)` | `integer(IP)` | Returns the first prime number `p_i > n`
 `next_prime(n,i)` | `integer(IP)` | Returns the $i$-th ($i \ge 1$) prime number larger than $n$.
-`prime_factors(n,f)` | `integer(IP)` | Returns all prime factors, and their multiplicities, of an integer.: 
+`prime_factors(n,f)` | `integer(IP)` | Returns all prime factors, and their multiplicities, of an integer. for example, $90=2\cdot3^2\cdot5$. `prime_factors(90,f)` returns `f(:,1) = [2,1]`, `f(:,2) = [3,2]`, `f(:,3) = [5,1]`. 
 
 Building, using
 ===============
