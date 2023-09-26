@@ -12,14 +12,11 @@ function      | type | Description
 `primes(n)` | `integer(IP)` | Returns a list containing all primes in the range $1 \lt p_i \le n$.
 `primes(lo,hi)` | `integer(IP)` | Returns a list containing all primes in the range $L \le p_i \le H$.
 `is_prime(n)` | `logical(LP)` | Boolean flag to check if $n$ is a prime number.
+`primes_mask(n)` | `logical(LP)` | Logical mask ranged `(1:n)` flagging the prime numbers in the range from `1` to `n`.
+`primes_mask(lo,hi)` | `logical(LP)` | Logical mask ranged `(1:hi-lo+1)` flagging the prime numbers in the range from `lo` to `hi`.
 `next_prime(n)` | `integer(IP)` | Returns the first prime number `p_i > n`
 `next_prime(n,i)` | `integer(IP)` | Returns the $i$-th ($i \ge 1$) prime number larger than $n$.
 `prime_factors(n,f)` | `integer(IP)` | Returns all prime factors, and their multiplicities, of an integer.: 
-
-
-### 2D Spline interpolators:
-
-
 
 Building, using
 ===============
