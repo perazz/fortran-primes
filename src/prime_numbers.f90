@@ -18,39 +18,39 @@
 !  ************************************************************************************************************
 module prime_numbers
 
-    use fortran_io
     use iso_fortran_env
     use prime_constants
 
     implicit none
     private
 
-    ! Publicly accessible procedures
+    ! prime(n) returns the n-th prime number
     public :: prime
-    public :: is_prime
-    public :: next_prime
-    public :: create_primes
-    public :: prime_factors
-    public :: n_primes
-    public :: witnesses
-    public :: generate_min_factors
 
-    public :: primes
-    public :: primes_mask
+    ! next_prime(n, i) returns the i-th prime number next to n (n not included)
+    public :: next_prime
+
+    ! call prime_factors(n, factors): return all prime factors, and their multiplicities, of an integer.
+    ! factors(FACTORS_PRIME,:) -> all prime factors
+    ! factors(FACTORS_POWER,:) -> their powers
+    public :: prime_factors
 
     ! Check if an integer is prime
+    public :: is_prime
     interface is_prime
         module procedure is_prime32
         module procedure is_prime64
     end interface is_prime
 
     ! Return a list of primes within a given integer range (or upper bound)
+    public :: primes
     interface primes
         module procedure primes_bounds
         module procedure primes_limit
     end interface primes
 
     ! Return a logical mask of primes within a given integer range (or upper bound)
+    public :: primes_mask
     interface primes_mask
         module procedure primes_mask_hi
         module procedure primes_mask_bounds
@@ -61,12 +61,15 @@ module prime_numbers
     character(*), parameter :: fmt_er = "(1x,a,' Overflow detected: n=',I9,' not between 1 and ',I9)"
     character(*), parameter :: fmt_er2 = "(1x,a,' Overflow detected: ',I9,' not in [2,',I9,']')"
 
+    ! Internal
+    public :: generate_min_factors
+
     contains
 
     ! Return the n-th prime number
     function prime(n) result(prime_number)
         integer(IP), intent(in) :: n
-        integer(IP)             :: prime_number
+        integer(IP)             :: prime_number,more
 
         select case (n)
            case (        1:  chunk); prime_number = p1_to_10000(n)
@@ -74,9 +77,13 @@ module prime_numbers
            case (2*chunk+1:3*chunk); prime_number = p20001_to_30000(n-2*chunk)
            case (3*chunk+1:4*chunk); prime_number = p30001_to_40000(n-3*chunk)
            case (4*chunk+1:5*chunk); prime_number = p40001_to_50000(n-4*chunk)
+           case (5*chunk+1:)
+               ! Use next-prime outside of the table
+               more = n-5*chunk
+               prime_number = next_prime(p40001_to_50000(chunk),more)
            case default
-               write(*,fmt_er)this_module,n,n_primes
-               stop
+               ! Negative/invalid
+               prime_number = -huge(prime_number)
         end select
 
     end function prime
@@ -231,207 +238,6 @@ module prime_numbers
           end if split_list
        end if
     end subroutine quickfind_int
-
-    !> Create list of prime numbers
-    subroutine create_primes
-
-        integer :: iunit,last,start,endch,nchunk,loop
-        integer, allocatable :: primes(:),pchunk(:)
-        integer, parameter :: chunk=32768
-        character(64) :: name
-
-        ! Read in the first 1,000,000 primes
-        open(newunit=iunit,file='primes1.txt',form='formatted',action='read')
-        allocate(primes(1000000))
-        read(iunit,*,end=1,err=2) primes
-        close(iunit)
-
-        open(newunit=iunit,file='primes_code.txt',form='formatted',action='write')
-
-        ! Write module
-        write(iunit,'(a)') ""
-
-        write(iunit,'(a)') "  module prime_numbers"
-        write(iunit,'(a)') "    use iso_fortran_env, only: int32"
-        write(iunit,'(a)') "    implicit none"
-        write(iunit,'(a)') "    private"
-        write(iunit,'(a)') ""
-        write(iunit,'(a)') "    ! Publicly accessible procedures"
-        write(iunit,'(a)') "    public :: prime,is_prime"
-        write(iunit,'(a)') "    public :: create_primes"
-        write(iunit,'(a)') ""
-        write(iunit,'(a)') "    ! Module parameters"
-        write(iunit,'(a,i0)') "    integer     , parameter :: chunk       = ",chunk
-        write(iunit,'(a,i0)') "    integer     , parameter :: n_primes    = ",size(primes)
-        write(iunit,'(a)') "    integer     , parameter :: IP = int32"
-        write(iunit,'(a)') "    character(*), parameter :: this_module = '[prime_numbers]'"
-        write(iunit,'(a)') "    character(*), parameter :: fmt_er = ""(1x,a,' Overflow detected: n=',I9,' not between 1 and ',I9)"""
-        write(iunit,'(a)') "    character(*), parameter :: fmt_er2 = ""(1x,a,' Overflow detected: ',I9,' not in [2,',I9,']')"""
-
-        write(iunit,"(/)")
-
-        ! Create arrays
-        last = 0
-        do while (last<size(primes))
-
-            ! Create a new chunk
-            start  = last+1
-            endch  = min(last+chunk,size(primes))
-            nchunk = endch-start+1
-
-            ! Create chunk array
-            write(name,10) start,endch
-
-
-            pchunk = primes(start:endch)
-            call print_1d_array(iunit,trim(name),pchunk,'IP')
-
-            ! Move to next
-            last = last + nchunk
-
-
-        end do
-
-        write(iunit,"(/)")
-        write(iunit,'(a)')"    contains"
-
-        ! Create subroutine to get n-th prime
-        write(iunit,"(///)")
-
-        write(iunit,'(a)') ""
-        write(iunit,'(a)') "    ! Return the n-th prime number"
-        write(iunit,'(a)') "    function prime(n) result(prime_number)"
-        write(iunit,'(a)') "        integer, intent(in) :: n"
-        write(iunit,'(a)') "        integer             :: prime_number"
-        write(iunit,'(a)') ""
-        write(iunit,'(a)') "        select case (n)"
-
-        last = 0
-        loop = 0
-        do while (last<size(primes))
-
-            loop = loop+1
-
-            ! Create a new chunk
-            start  = last+1
-            endch  = min(last+chunk,size(primes))
-            nchunk = endch-start+1
-
-            ! Create chunk array
-            write(iunit,20) loop-1,loop,start,endch,loop-1
-
-            ! Move to next
-            last = last + nchunk
-
-        end do
-
-        write(iunit,'(a)') "           case default"
-        write(iunit,'(a)') "               write(*,fmt_er)this_module,n,n_primes"
-        write(iunit,'(a)') "               stop"
-        write(iunit,'(a)') "        end select"
-        write(iunit,'(a)') " "
-        write(iunit,'(a)') "    end function prime"
-
-        ! Create function to return the n-th prime number
-        write(iunit,"(///)")
-        write(iunit,'(a)') "    ! Detect if an integer number is prime"
-        write(iunit,'(a)') "    logical function is_prime(n)"
-        write(iunit,'(a)') "       integer, intent(in) :: n"
-        write(iunit,'(a)') "       integer :: it"
-        write(iunit,'(a)') ""
-        write(iunit,'(a)') "       ! Use a divide-and-conquer strategy"
-        write(iunit,'(a)') "       select case (n)"
-
-        last = 0
-        loop = 0
-        do while (last<size(primes))
-            loop = loop+1
-            ! Create a new chunk
-            start  = last+1
-            endch  = min(last+chunk,size(primes))
-            nchunk = endch-start+1
-            ! Create chunk array
-
-            if (nchunk==chunk) then
-                name = 'chunk'
-            else
-                write(name,'(i0)')nchunk
-            end if
-
-            write(iunit,30) start,endch,start,endch,trim(adjustl(name))
-            write(iunit,31) start,endch,start,endch
-            ! Move to next
-            last = last + nchunk
-        end do
-        write(iunit,'(a)') "          case default"
-        write(iunit,'(a)') "              write(*,fmt_er2)this_module,n,n_primes"
-        write(iunit,'(a)') "              stop"
-        write(iunit,'(a)') "       end select"
-        write(iunit,'(a)') ""
-        write(iunit,'(a)') "       is_prime = it>0.and.it<=chunk"
-        write(iunit,'(a)') ""
-        write(iunit,'(a)') "    end function is_prime"
-        write(iunit,'(//)')
-        write(iunit,'(a)')"    ! Find position of stored point x in list, list *already* sorted in ascending order"
-        write(iunit,'(a)')"    pure recursive subroutine quickfind_int(list,x,it,bounds)"
-        write(iunit,'(a)')"       integer(IP), intent(in)              :: list(:)"
-        write(iunit,'(a)')"       integer(IP), intent(in)              :: x"
-        write(iunit,'(a)')"       integer(IP), intent(inout)           :: it"
-        write(iunit,'(a)')"       integer(IP), intent(in), optional    :: bounds(2)"
-        write(iunit,'(a)')"       integer(IP), parameter :: max_quickfind_size = 16_IP"
-        write(iunit,'(a)')""
-        write(iunit,'(a)')"       ! Local variables"
-        write(iunit,'(a)')"       integer(IP) :: i,n,l,u"
-        write(iunit,'(a)')""
-        write(iunit,'(a)')"       n = size(list,kind=IP)"
-        write(iunit,'(a)')""
-        write(iunit,'(a)')"       ! Define current global range bounds"
-        write(iunit,'(a)')"       if (present(bounds)) then"
-        write(iunit,'(a)')"         l = bounds(1)"
-        write(iunit,'(a)')"         u = bounds(2)"
-        write(iunit,'(a)')"       else"
-        write(iunit,'(a)')"         l = lbound(list,1,kind=IP)"
-        write(iunit,'(a)')"         u = ubound(list,1,kind=IP)"
-        write(iunit,'(a)')"       end if"
-        write(iunit,'(a)')"       if (n<=max_quickfind_size) then"
-        write(iunit,'(a)')"          ! Point is lower than lowest value"
-        write(iunit,'(a)')"          it = -huge(it)"
-        write(iunit,'(a)')"          if (x<list(1)) return"
-        write(iunit,'(a)')""
-        write(iunit,'(a)')"          do i=1,n"
-        write(iunit,'(a)')"             if (x==list(i)) then"
-        write(iunit,'(a)')"                it = l-1+i"
-        write(iunit,'(a)')"                return"
-        write(iunit,'(a)')"             end if"
-        write(iunit,'(a)')"          end do"
-        write(iunit,'(a)')""
-        write(iunit,'(a)')"          ! Point is bigger than largest value"
-        write(iunit,'(a)')"          it = huge(it)"
-        write(iunit,'(a)')"       else"
-        write(iunit,'(a)')"          ! Set is big, use quicksort"
-        write(iunit,'(a)')"          i = int(n/2,kind=IP)"
-        write(iunit,'(a)')"          split_list: if (x>=list(i)) then"
-        write(iunit,'(a)')"             call quickfind_int(list(i:),x,it,[l-1+i,u])"
-        write(iunit,'(a)')"          else split_list"
-        write(iunit,'(a)')"             call quickfind_int(list(:i),x,it,[l,l-1+i])"
-        write(iunit,'(a)')"          end if split_list"
-        write(iunit,'(a)')"       end if"
-        write(iunit,'(a)')"    end subroutine quickfind_int"
-        write(iunit,'(a)')""
-        write(iunit,'(//a)') "  end module prime_numbers"
-        close(iunit)
-
-        return
-
-        1 stop 'END OF FILE READING PRIMES'
-        2 stop 'ERROR READING PRIMES'
-
-        10 format('p',i0,'_to_',i0)
-        20 format(11x,'case (',i3.3,'*chunk+1:',i3.3,'*chunk); prime_number = p',i0,'_to_',i0,'(n-',i0,'*chunk)')
-        30 format(10x,'case (p',i0,'_to_',i0,'(1):p',i0,'_to_',i0,'(',a,'))')
-        31 format(14x,'call quickfind_int(p',i0,'_to_',i0,',n,it,bounds=[',i0,',',i0,'])')
-
-    end subroutine create_primes
 
     ! Return number of trailing zeros in the bitwise representation
     elemental integer(WP) function trailing_zeros(n) result(nzero)
@@ -817,55 +623,55 @@ module prime_numbers
         integer(IP), intent(in) :: n
         integer(IP), allocatable, intent(out) :: factors(:,:)
 
-!        ! This buffer should be large enough that the product of the 1st 4196 primes
-!        ! is surely out of the current precision
-!        integer(IP) :: buffer(2,FACTORS_CHUNKSIZE),nfactors,remainder,prime
-!
-!        nfactors  = 1
-!        buffer(FACTORS_POWER,1) = 0
-!        remainder = abs(n)
-!        prime     = 2_IP
-!
-!        ! The easy test
-!        if (remainder<2_IP) then
-!           allocate(factors(2,0))
-!           return
-!        elseif (is_prime(remainder)) then
-!           allocate(factors(2,1))
-!           factors(FACTORS_PRIME,1) = remainder
-!           factors(FACTORS_POWER,1) = 1_IP
-!           return
-!        end if
-!
-!        do while (remainder>0_IP)
-!
-!            print *, 'remainder=',remainder,' prime=',prime
-!
-!            ! Prime is a factor
-!            if (mod(remainder,prime)==0) then
-!                remainder = remainder/prime
-!
-!                ! Add to multiplicity
-!                buffer(FACTORS_POWER,nfactors) = buffer(FACTORS_POWER,nfactors)+1_IP
-!
-!                if (remainder==1_IP) exit
-!            else
-!
-!                ! Should we close a previous factor?
-!                if (buffer(FACTORS_POWER,nfactors)>0) then
-!                    buffer(FACTORS_PRIME,nfactors)   = prime
-!                    buffer(FACTORS_POWER,nfactors+1) = 0
-!                    nfactors = nfactors+1
-!                end if
-!
-!                ! Try another prime
-!                prime = next_prime(prime)
-!
-!            end if
-!
-!        end do
-!
-!        allocate(factors(2,nfactors),source=buffer(:,1:nfactors))
+        ! This buffer should be large enough that the product of the 1st 4196 primes
+        ! is surely out of the current precision
+        integer(IP) :: buffer(2,FACTORS_CHUNKSIZE),nfactors,remainder,prime
+
+        nfactors  = 1
+        buffer(FACTORS_POWER,1) = 0
+        remainder = abs(n)
+        prime     = 2_IP
+
+        ! The easy test
+        if (remainder<2_IP) then
+           allocate(factors(2,0))
+           return
+        elseif (is_prime(remainder)) then
+           allocate(factors(2,1))
+           factors(FACTORS_PRIME,1) = remainder
+           factors(FACTORS_POWER,1) = 1_IP
+           return
+        end if
+
+        do while (remainder>0_IP)
+
+            ! Prime is a factor
+            if (mod(remainder,prime)==0) then
+                remainder = remainder/prime
+
+                ! Add to multiplicity
+                buffer(FACTORS_POWER,nfactors) = buffer(FACTORS_POWER,nfactors)+1_IP
+
+                if (remainder==1_IP) then
+                    buffer(FACTORS_PRIME,nfactors) = prime
+                    exit
+                endif
+            else
+
+                ! Should we close a previous factor?
+                if (buffer(FACTORS_POWER,nfactors)>0) then
+                    buffer(FACTORS_PRIME,nfactors)   = prime
+                    buffer(FACTORS_POWER,nfactors+1) = 0
+                    nfactors = nfactors+1
+                end if
+
+                ! Try another prime
+                prime = next_prime(prime)
+            end if
+
+        end do
+
+        allocate(factors(2,nfactors),source=buffer(:,1:nfactors))
 
     end subroutine prime_factors
 

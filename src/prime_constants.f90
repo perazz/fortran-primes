@@ -35,7 +35,7 @@ module prime_constants
     integer     , parameter :: QP          = c_int128_t
     integer     , parameter :: LP          = c_bool
     integer     , parameter :: chunk       = 10000
-    integer     , parameter :: n_primes    = 5*chunk
+    integer     , parameter :: N_TABLE     = 5*chunk
 
     ! Pointers to the storage for the prime factors and their multiplicities
     integer(IP), parameter, public :: FACTORS_CHUNKSIZE = 2048

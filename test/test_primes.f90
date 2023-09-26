@@ -46,7 +46,7 @@ program test_primes
     call add_test(test_is_prime())
     call add_test(test_vs_c())
     call add_test(test_next_prime())
-    !call add_test(test_factors())
+    call add_test(test_factors())
 
     write(*,fmt_failed)this_test,npassed,nfailed
     if (nfailed>0) then
@@ -189,9 +189,9 @@ program test_primes
         integer(IP) :: i
         integer(IP), allocatable :: factors(:,:)
 
-        do i=1,999,2
+        do i=1,99999
             call prime_factors(i,factors)
-            success = product(factors(FACTORS_PRIME,:)**factors(FACTORS_POWER,:))==i
+            success = sign(product(factors(FACTORS_PRIME,:)**factors(FACTORS_POWER,:)),i)==i
             if (.not.success) then
                 print 1, i,factors
                 return
@@ -203,10 +203,6 @@ program test_primes
 
 
     end function test_factors
-
-
-
-
 
 end program test_primes
 
