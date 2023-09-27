@@ -34,8 +34,6 @@ program test_primes
     integer :: nfailed,npassed
 
     ! Local variables
-    integer, allocatable :: w64(:)
-    integer      :: i,j,ierr
     character(*), parameter :: fmt_failed = "(1x,a,' has ',i0,' test passed, ',i0,' not passed.')"
     nfailed = 0
     npassed = 0
@@ -132,6 +130,8 @@ program test_primes
        integer(IP), parameter :: N2(*) = [    2, 3, 5, 5, 7, 7,11,11,11,11,13,13,1048583,1073741827]
        integer(IP), parameter :: N3(*) = [    3, 5, 7, 7,11,11,13,13,13,13,17,17,1048589,1073741831]
 
+       integer :: i
+
        do i=1,size(N1)
           success = next_prime(N1(i))==N2(i)
           if (.not.success) then
@@ -176,7 +176,8 @@ program test_primes
 
         do i=1,99999
             call prime_factors(i,factors)
-            success = sign(product(factors(FACTORS_PRIME,:)**factors(FACTORS_POWER,:)),i)==i
+            success = sign(product(factors(FACTORS_PRIME,:)**factors(FACTORS_POWER,:)),i)==i &
+                      .and. all(is_prime(factors(FACTORS_PRIME,:)))
             if (.not.success) then
                 print 1, i,factors
                 return
