@@ -135,7 +135,6 @@ module prime_numbers
 
     end function primes_bounds
 
-
     ! Detect if an integer number is prime
     elemental logical function is_prime32(n) result(is_prime)
        integer(IP), intent(in) :: n
@@ -760,7 +759,7 @@ module prime_numbers
     end function is_SPRP64
 
 
-    ! Find the next prime number
+    ! Find the i-th prime number next (right) to n. If i is not provided, find the immediate next prime (i=1)
     integer(IP) function next_prime(n, i)
        integer(IP), intent(in) :: n
        integer(IP), optional, intent(in) :: i
@@ -771,7 +770,6 @@ module prime_numbers
        usen = max(n,2_IP)
 
        ! If possible, locate the next prime using the look-up table
-
        if (usei<=0) stop 'i-th next prime to be found must be >=1'
 
        if (usen == 2_IP) then
